@@ -42,8 +42,8 @@ with st.form(key='add_task_form', clear_on_submit=True):
     if submit_button:
         # Chama a função para adicionar a tarefa ao clicar no botão
         add_task(new_task)
-        # Re-executa o script para atualizar a lista
-        st.experimental_rerun()
+        # Linha st.experimental_rerun() REMOVIDA para corrigir o erro! 
+        # O Streamlit irá reroduzir o código automaticamente.
 
 
 # --- Exibição e Gerenciamento da Lista de Tarefas ---

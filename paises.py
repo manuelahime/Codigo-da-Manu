@@ -12,4 +12,4 @@ fig = px.choropleth(dataset,
                     hover_name=dataset ['nome'])
 fig.update_layout(title= 'Mapa Coroléptico dos Países', 
                   geo_scope='world')
-st.plotly_chart (fig, use_container_width
+st.plotly_chart (fig, use_container_width=True, the,e="streamlit")

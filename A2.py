@@ -1,4 +1,7 @@
-pip install -r requirementsA2.txt
+python -m venv venv
+source venv/bin/activate  
+
+pip install -r requirements.txt
 
 streamlit run app.py
 
@@ -17,7 +20,8 @@ import io
 st.set_page_config(page_title="Analisador de Notícias de Parlamentares", layout="wide")
 st.title("🔎 Agente de Notícias e Análise de Parlamentares")
 
-# === Bloco 1: Carregamento de Modelos e API (com Cache) ===
+# === Bloco 1: Funções de Carregamento (com Cache) ===
+# Estas funções SÓ SERÃO EXECUTADAS quando chamadas, não mais no início
 
 @st.cache_resource
 def carregar_modelo_spacy():
@@ -29,7 +33,6 @@ def carregar_modelo_spacy():
         nlp = spacy.load("pt_core_news_sm")
         return nlp
     except IOError:
-        # Este erro acontece se o requirements.txt não foi instalado corretamente
         st.error("Erro Crítico: Não foi possível carregar o modelo 'pt_core_news_sm'.")
         st.info("Por favor, pare o servidor (Ctrl+C no terminal), rode 'pip install -r requirements.txt' novamente e tente 'streamlit run app.py'.")
         return None
@@ -60,7 +63,6 @@ def carregar_lista_deputados(arquivo_upado):
             st.info(f"Colunas encontradas: {df.columns.tolist()}")
             return None, None
             
-        # Não usamos st.success aqui para não poluir a tela a cada recarga
         return df, coluna_nome
         
     except Exception as e:
@@ -80,11 +82,6 @@ def configurar_api_gemini():
     except Exception as e:
         st.error(f"Erro ao configurar a API do Gemini: {e}")
         return False
-
-# --- Carrega os recursos ---
-nlp = carregar_modelo_spacy()
-api_configurada = configurar_api_gemini()
-
 
 # === Bloco 2: Funções de Lógica (Notícias, Resumo, Nuvem) ===
 
@@ -125,14 +122,14 @@ def resumir_noticias_com_gemini(prompt_noticias, nome_deputado):
         st.error(f"Erro ao gerar conteúdo do Gemini: {e}")
         return "Erro na geração do resumo."
 
-def gerar_nuvem_de_palavras(texto, nome_deputado):
+def gerar_nuvem_de_palavras(nlp_model, texto, nome_deputado): # Adicionamos nlp_model como argumento
     """
     Processa o texto com Spacy e gera uma figura do Matplotlib com a nuvem de palavras.
     """
     palavras_nome = nome_deputado.lower().split()
-    stop_words_custom = nlp.Defaults.stop_words.union(palavras_nome)
+    stop_words_custom = nlp_model.Defaults.stop_words.union(palavras_nome)
     
-    doc = nlp(texto.lower())
+    doc = nlp_model(texto.lower())
     tokens_limpos = []
     for token in doc:
         if (token.text not in stop_words_custom and 
@@ -168,50 +165,61 @@ def gerar_nuvem_de_palavras(texto, nome_deputado):
 
 # === Bloco 3: Interface do Aplicativo (Streamlit) ===
 
-# --- INÍCIO DA ALTERAÇÃO ---
-# Verifica se os recursos essenciais (API e Modelo NLP) foram carregados
-if api_configurada and nlp:
-    st.header("1. Carregar Lista de Parlamentares")
-    uploaded_file = st.file_uploader("Faça o upload do seu arquivo (Excel ou CSV)", type=["xls", "xlsx", "csv"])
+st.header("1. Carregar Lista de Parlamentares")
+uploaded_file = st.file_uploader("Faça o upload do seu arquivo (Excel ou CSV)", type=["xls", "xlsx", "csv"])
+
+if uploaded_file is not None:
+    df, coluna_nome = carregar_lista_deputados(uploaded_file)
     
-    if uploaded_file is not None:
-        df, coluna_nome = carregar_lista_deputados(uploaded_file)
+    if df is not None:
+        st.header("2. Selecionar Parlamentar")
         
-        if df is not None:
-            st.header("2. Selecionar Parlamentar")
+        nomes_lista = ["Selecione..."] + sorted(df[coluna_nome].unique())
+        nome_selecionado = st.selectbox("Escolha um(a) parlamentar da lista:", options=nomes_lista)
+        
+        if nome_selecionado != "Selecione...":
+            st.header("3. Gerar Análise")
             
-            nomes_lista = ["Selecione..."] + sorted(df[coluna_nome].unique())
-            nome_selecionado = st.selectbox("Escolha um(a) parlamentar da lista:", options=nomes_lista)
-            
-            if nome_selecionado != "Selecione...":
-                st.header("3. Gerar Análise")
+            if st.button(f"Analisar {nome_selecionado}"):
                 
-                if st.button(f"Analisar {nome_selecionado}"):
+                # --- INÍCIO DA ALTERAÇÃO ---
+                # SÓ AGORA vamos carregar a API e o Modelo
+                
+                with st.spinner("Configurando API e carregando modelo de linguagem..."):
+                    api_configurada = configurar_api_gemini()
+                    nlp = carregar_modelo_spacy()
+                
+                # Se a configuração ou o modelo falharem, paramos aqui
+                if not api_configurada:
+                    st.error("Falha na configuração da API. Verifique o secrets.toml e tente novamente.")
+                    st.stop() # Para a execução
+                
+                if not nlp:
+                    st.error("Falha ao carregar modelo Spacy. Verifique a instalação (requirements.txt) e tente novamente.")
+                    st.stop() # Para a execução
+                
+                st.success("Modelos e API carregados com sucesso!")
+                # --- FIM DA ALTERAÇÃO ---
+
+                with st.spinner(f"Buscando notícias recentes sobre {nome_selecionado}..."):
+                    texto_noticias, prompt_noticias = buscar_noticias(nome_selecionado)
+                
+                if not texto_noticias:
+                    st.error(f"Nenhuma notícia encontrada para {nome_selecionado}.")
+                else:
+                    st.success("Notícias encontradas!")
+                    col1, col2 = st.columns(2)
                     
-                    with st.spinner(f"Buscando notícias recentes sobre {nome_selecionado}..."):
-                        texto_noticias, prompt_noticias = buscar_noticias(nome_selecionado)
+                    with col1:
+                        st.subheader("Resumo das Notícias (via Gemini)")
+                        with st.spinner("Gerando resumo com IA..."):
+                            resumo_noticias = resumir_noticias_com_gemini(prompt_noticias, nome_selecionado)
+                            st.write(resumo_noticias)
                     
-                    if not texto_noticias:
-                        st.error(f"Nenhuma notícia encontrada para {nome_selecionado}.")
-                    else:
-                        st.success("Notícias encontradas!")
-                        col1, col2 = st.columns(2)
-                        
-                        with col1:
-                            st.subheader("Resumo das Notícias (via Gemini)")
-                            with st.spinner("Gerando resumo com IA..."):
-                                resumo_noticias = resumir_noticias_com_gemini(prompt_noticias, nome_selecionado)
-                                st.write(resumo_noticias)
-                        
-                        with col2:
-                            st.subheader("Nuvem de Palavras (WordCloud)")
-                            with st.spinner("Criando nuvem de palavras..."):
-                                fig_nuvem = gerar_nuvem_de_palavras(texto_noticias, nome_selecionado)
-                                if fig_nuvem:
-                                    st.pyplot(fig_nuvem)
-# --- FIM DA ALTERAÇÃO ---
-# Adiciona mensagens de erro claras se os recursos não carregarem
-elif not api_configurada:
-    st.error("Aplicação parada: Verifique suas credenciais da API Gemini no arquivo secrets.toml.")
-elif not nlp:
-    st.error("Aplicação parada: Modelo Spacy não pôde ser carregado. Verifique o terminal.")
+                    with col2:
+                        st.subheader("Nuvem de Palavras (WordCloud)")
+                        with st.spinner("Criando nuvem de palavras..."):
+                            # Passamos o modelo 'nlp' que acabamos de carregar
+                            fig_nuvem = gerar_nuvem_de_palavras(nlp, texto_noticias, nome_selecionado)
+                            if fig_nuvem:
+                                st.pyplot(fig_nuvem)

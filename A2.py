@@ -1,7 +1,4 @@
-python -m venv venv
-source venv/bin/activate  # No Windows: venv\Scripts\activate
-
-pip install -r requirements.txt
+pip install -r requirementsA2.txt
 
 streamlit run app.py
 
@@ -24,32 +21,33 @@ st.title("🔎 Agente de Notícias e Análise de Parlamentares")
 
 @st.cache_resource
 def carregar_modelo_spacy():
-    """Baixa e carrega o modelo de linguagem do Spacy."""
+    """
+    Carrega o modelo de linguagem do Spacy.
+    Assume que 'pt_core_news_sm' foi instalado via requirements.txt.
+    """
     try:
         nlp = spacy.load("pt_core_news_sm")
+        return nlp
     except IOError:
-        st.info("Baixando modelo de linguagem 'pt_core_news_sm' (só na primeira vez)...")
-        os.system("python -m spacy download pt_core_news_sm")
-        nlp = spacy.load("pt_core_news_sm")
-    return nlp
+        # Este erro acontece se o requirements.txt não foi instalado corretamente
+        st.error("Erro Crítico: Não foi possível carregar o modelo 'pt_core_news_sm'.")
+        st.info("Por favor, pare o servidor (Ctrl+C no terminal), rode 'pip install -r requirements.txt' novamente e tente 'streamlit run app.py'.")
+        return None
 
 @st.cache_data
 def carregar_lista_deputados(arquivo_upado):
     """
     Carrega a lista de deputados de um arquivo .csv, .xls ou .xlsx.
-    O decorator @st.cache_data garante que o arquivo só seja lido uma vez.
     """
     try:
         if arquivo_upado.name.endswith('.csv'):
             df = pd.read_csv(arquivo_upado)
         elif arquivo_upado.name.endswith(('.xls', '.xlsx')):
-            # Passa o objeto do arquivo diretamente para o pandas
             df = pd.read_excel(arquivo_upado)
         else:
             st.error("Formato de arquivo não suportado. Use .csv, .xls ou .xlsx")
             return None, None
         
-        # Procura a coluna "Nome Parlamentar" ou "Nome"
         coluna_alvo_1 = "nome parlamentar"
         coluna_alvo_2 = "nome"
         
@@ -62,7 +60,7 @@ def carregar_lista_deputados(arquivo_upado):
             st.info(f"Colunas encontradas: {df.columns.tolist()}")
             return None, None
             
-        st.success(f"Lista carregada com sucesso. Usando a coluna: '{coluna_nome}'")
+        # Não usamos st.success aqui para não poluir a tela a cada recarga
         return df, coluna_nome
         
     except Exception as e:
@@ -131,7 +129,6 @@ def gerar_nuvem_de_palavras(texto, nome_deputado):
     """
     Processa o texto com Spacy e gera uma figura do Matplotlib com a nuvem de palavras.
     """
-    # 1. Limpar o texto
     palavras_nome = nome_deputado.lower().split()
     stop_words_custom = nlp.Defaults.stop_words.union(palavras_nome)
     
@@ -150,7 +147,6 @@ def gerar_nuvem_de_palavras(texto, nome_deputado):
     
     texto_limpo = " ".join(tokens_limpos)
     
-    # 2. Gerar a nuvem
     try:
         wordcloud = WordCloud(
             width=800, 
@@ -160,7 +156,6 @@ def gerar_nuvem_de_palavras(texto, nome_deputado):
             collocations=False
         ).generate(texto_limpo)
         
-        # 3. Criar a figura do Matplotlib
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.imshow(wordcloud, interpolation='bilinear')
         ax.axis('off')
@@ -173,7 +168,9 @@ def gerar_nuvem_de_palavras(texto, nome_deputado):
 
 # === Bloco 3: Interface do Aplicativo (Streamlit) ===
 
-if api_configurada:
+# --- INÍCIO DA ALTERAÇÃO ---
+# Verifica se os recursos essenciais (API e Modelo NLP) foram carregados
+if api_configurada and nlp:
     st.header("1. Carregar Lista de Parlamentares")
     uploaded_file = st.file_uploader("Faça o upload do seu arquivo (Excel ou CSV)", type=["xls", "xlsx", "csv"])
     
@@ -183,17 +180,14 @@ if api_configurada:
         if df is not None:
             st.header("2. Selecionar Parlamentar")
             
-            # Cria uma lista de nomes, adicionando "Selecione..." no início
             nomes_lista = ["Selecione..."] + sorted(df[coluna_nome].unique())
             nome_selecionado = st.selectbox("Escolha um(a) parlamentar da lista:", options=nomes_lista)
             
             if nome_selecionado != "Selecione...":
                 st.header("3. Gerar Análise")
                 
-                # Botão para iniciar a análise
                 if st.button(f"Analisar {nome_selecionado}"):
                     
-                    # Etapa 1: Buscar Notícias
                     with st.spinner(f"Buscando notícias recentes sobre {nome_selecionado}..."):
                         texto_noticias, prompt_noticias = buscar_noticias(nome_selecionado)
                     
@@ -201,21 +195,23 @@ if api_configurada:
                         st.error(f"Nenhuma notícia encontrada para {nome_selecionado}.")
                     else:
                         st.success("Notícias encontradas!")
-                        
-                        # Dividir a tela em duas colunas
                         col1, col2 = st.columns(2)
                         
-                        # Coluna 1: Resumo
                         with col1:
                             st.subheader("Resumo das Notícias (via Gemini)")
                             with st.spinner("Gerando resumo com IA..."):
                                 resumo_noticias = resumir_noticias_com_gemini(prompt_noticias, nome_selecionado)
                                 st.write(resumo_noticias)
                         
-                        # Coluna 2: Nuvem de Palavras
                         with col2:
                             st.subheader("Nuvem de Palavras (WordCloud)")
                             with st.spinner("Criando nuvem de palavras..."):
                                 fig_nuvem = gerar_nuvem_de_palavras(texto_noticias, nome_selecionado)
                                 if fig_nuvem:
                                     st.pyplot(fig_nuvem)
+# --- FIM DA ALTERAÇÃO ---
+# Adiciona mensagens de erro claras se os recursos não carregarem
+elif not api_configurada:
+    st.error("Aplicação parada: Verifique suas credenciais da API Gemini no arquivo secrets.toml.")
+elif not nlp:
+    st.error("Aplicação parada: Modelo Spacy não pôde ser carregado. Verifique o terminal.")

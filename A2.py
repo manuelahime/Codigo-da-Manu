@@ -25,9 +25,13 @@ st.markdown("---")
 try:
     # O Streamlit carrega a chave do arquivo .streamlit/secrets.toml
     GOOGLE_API_KEY = st.secrets["AIzaSyCVIS15AaZ2CHYAJI0-Q-HUDL_wrAED30o"]
+   if not GOOGLE_API_KEY:
+       raise ValueError("A chave 'GEMINI_API_KEY' foi lida mas está vazia.")
     genai.configure(api_key=GOOGLE_API_KEY)
     model = genai.GenerativeModel('gemini-2.5-flash')
     st.sidebar.success("✅ Gemini API configurada com sucesso!")
+except KeyError: 
+    st.sidebar.error("Erro: Chave 'GEMINI_API_KEY'não encontrada nas Secrets do Streamlit Cloud.")
 except Exception as e:
     st.sidebar.error(f"❌ Erro ao configurar a API do Gemini. Certifique-se de que a `GEMINI_API_KEY` está no seu `secrets.toml`. {e}")
     st.stop() # Interrompe a execução se a API não estiver configurada.

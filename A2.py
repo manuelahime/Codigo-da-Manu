@@ -29,7 +29,7 @@ try:
     model = genai.GenerativeModel('gemini-2.5-flash')
     st.sidebar.success("✅ Gemini API configurada com sucesso!")
 except Exception as e:
-    st.sidebar.error(f"❌ Erro ao configurar a API do Gemini. Certifique-se de que a `GEMINI_API_KEY` está no seu `secrets.toml`.")
+    st.sidebar.error(f"❌ Erro ao configurar a API do Gemini. Certifique-se de que a `GEMINI_API_KEY` está no seu `secrets.toml`. {e}")
     st.stop() # Interrompe a execução se a API não estiver configurada.
 
 # Carregamento do Modelo Spacy

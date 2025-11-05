@@ -24,7 +24,7 @@ st.markdown("---")
 # Configuração da API do Gemini
 try:
     # O Streamlit carrega a chave do arquivo .streamlit/secrets.toml
-    GOOGLE_API_KEY = st.secrets["AIzaSyDzszGnzRelWwBIZUN0lIGNuXDk3j1WTsM"]
+    GOOGLE_API_KEY = st.secrets["AIzaSyCVIS15AaZ2CHYAJI0-Q-HUDL_wrAED30o"]
     genai.configure(api_key=GOOGLE_API_KEY)
     model = genai.GenerativeModel('gemini-2.5-flash')
     st.sidebar.success("✅ Gemini API configurada com sucesso!")

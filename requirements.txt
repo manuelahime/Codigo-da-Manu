@@ -6,4 +6,3 @@ matplotlib
 wordcloud
 gnews
 spacy
-pt_core_news_sm

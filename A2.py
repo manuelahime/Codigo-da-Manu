@@ -24,7 +24,7 @@ st.markdown("---")
 # Configuração da API do Gemini
 try:
     # O Streamlit carrega a chave do arquivo .streamlit/secrets.toml
-    GOOGLE_API_KEY = st.secrets["AIzaSyCVIS15AaZ2CHYAJI0-Q-HUDL_wrAED30o"]
+    GOOGLE_API_KEY = st.secrets["GEMINI_API_KEY"]
     if not GOOGLE_API_KEY:
        raise ValueError("A chave 'GEMINI_API_KEY' foi lida mas está vazia.")
     genai.configure(api_key=GOOGLE_API_KEY)

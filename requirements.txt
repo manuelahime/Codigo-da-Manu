@@ -5,9 +5,4 @@ google-generativeai
 wordcloud
 matplotlib
 openpyxl
-
-# Instalação do Spacy com o modelo em português
-https://github.com/explosion/spacy-models/releases/download/pt_core_news_sm-3.7.0/pt_core_news_sm-3.7.0.tar.gz
-
-# Você pode precisar da versão específica do spacy instalada também, dependendo das dependências
-spacy>=3.7.0,<3.8.0
+spacy

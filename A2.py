@@ -46,8 +46,7 @@ def load_spacy_model():
         st.sidebar.success("✅ Modelo Spacy (pt_core_news_sm) carregado.")
         return nlp
     except IOError:
-        # Se falhar, é porque o modelo não foi instalado.
-        st.error("❌ Erro no Spacy: O modelo 'pt_core_news_sm' não foi instalado corretamente pelo requirements.txt.")
+        st.error("❌ Erro no Spacy: O modelo 'pt_core_news_sm' não foi instalado corretamente. Verifique o requirements.txt.")
         st.stop()
     except Exception as e:
         st.error(f"❌ Erro ao carregar modelo Spacy: {e}")

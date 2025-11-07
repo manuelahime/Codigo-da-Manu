@@ -36,19 +36,18 @@ except Exception as e:
     st.sidebar.error(f"❌ Erro ao configurar a API do Gemini. Certifique-se de que a `GEMINI_API_KEY` está no seu `secrets.toml`. {e}")
     st.stop() # Interrompe a execução se a API não estiver configurada.
 
-# === Carregamento do Modelo Spacy (Versão Simples e Limpa) ===
+# === Carregamento do Modelo Spacy (Simples) ===
 
 @st.cache_resource
 def load_spacy_model():
     """Carrega o modelo Spacy uma única vez."""
     try:
-        # Apenas tenta carregar. Se o modelo foi instalado via pip, vai funcionar.
         nlp = spacy.load("pt_core_news_sm")
         st.sidebar.success("✅ Modelo Spacy (pt_core_news_sm) carregado.")
         return nlp
     except IOError:
-        # Se falhar, é porque a instalação no requirements.txt falhou.
-        st.error("❌ Erro no Spacy: Modelo 'pt_core_news_sm' não encontrado no ambiente de deploy.")
+        # Se falhar, é porque o modelo não foi instalado.
+        st.error("❌ Erro no Spacy: O modelo 'pt_core_news_sm' não foi instalado corretamente pelo requirements.txt.")
         st.stop()
     except Exception as e:
         st.error(f"❌ Erro ao carregar modelo Spacy: {e}")

@@ -36,46 +36,24 @@ except Exception as e:
     st.sidebar.error(f"❌ Erro ao configurar a API do Gemini. Certifique-se de que a `GEMINI_API_KEY` está no seu `secrets.toml`. {e}")
     st.stop() # Interrompe a execução se a API não estiver configurada.
 
-# Carregamento do Modelo Spacy
-# === Carregamento e Instalação do Modelo Spacy ===
-
-import subprocess
-import sys # Necessário para rodar subprocessos
+# === Carregamento do Modelo Spacy (Versão Simples e Limpa) ===
 
 @st.cache_resource
 def load_spacy_model():
-    MODEL_NAME = "pt_core_news_sm"
+    """Carrega o modelo Spacy uma única vez."""
     try:
-        # Tenta carregar o modelo normalmente
-        nlp = spacy.load(MODEL_NAME)
-        st.sidebar.success(f"✅ Modelo Spacy ({MODEL_NAME}) carregado.")
+        # Apenas tenta carregar. Se o modelo foi instalado via pip, vai funcionar.
+        nlp = spacy.load("pt_core_news_sm")
+        st.sidebar.success("✅ Modelo Spacy (pt_core_news_sm) carregado.")
         return nlp
     except IOError:
-        # Se não encontrar, tenta fazer o download/instalação via subprocesso
-        st.warning(f"Modelo '{MODEL_NAME}' não encontrado localmente. Tentando download...")
-        
-        try:
-            # Comando para download/instalação direta do modelo via pip
-            subprocess.check_call([
-                sys.executable,
-                "-m", 
-                "pip", 
-                "install", 
-                f"https://github.com/explosion/spacy-models/releases/download/{MODEL_NAME}-3.7.0/{MODEL_NAME}-3.7.0.tar.gz"
-            ])
-            # Tenta carregar novamente após a instalação
-            nlp = spacy.load(MODEL_NAME)
-            st.sidebar.success(f"✅ Modelo Spacy ({MODEL_NAME}) baixado e carregado com sucesso!")
-            return nlp
-            
-        except subprocess.CalledProcessError as e:
-            st.error(f"❌ Erro crítico ao instalar o modelo Spacy via subprocesso: {e}")
-            st.stop()
-        except Exception as e:
-            st.error(f"❌ Erro final ao carregar o modelo Spacy: {e}")
-            st.stop()
+        # Se falhar, é porque a instalação no requirements.txt falhou.
+        st.error("❌ Erro no Spacy: Modelo 'pt_core_news_sm' não encontrado no ambiente de deploy.")
+        st.stop()
+    except Exception as e:
+        st.error(f"❌ Erro ao carregar modelo Spacy: {e}")
+        st.stop()
 
-# Chama a função para garantir o carregamento
 nlp = load_spacy_model()
 
 # === 2. Funções de Carregamento e Seleção (Adaptadas para Streamlit) ===

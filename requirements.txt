@@ -1,8 +1,13 @@
 streamlit
-pandas
-gnews
 google-generativeai
-wordcloud
-matplotlib
+pandas
 openpyxl
-spacy
+matplotlib
+wordcloud
+gnews
+
+# IMPORTANTE: Instala a versão específica do spaCy
+spacy==3.7.0  # Mantenha a versão compatível com o link abaixo
+
+# Instala o modelo diretamente como um pacote Python (.whl)
+https://github.com/explosion/spacy-models/releases/download/pt_core_news_sm-3.7.0/pt_core_news_sm-3.7.0-py3-none-any.whl

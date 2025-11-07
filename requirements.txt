@@ -5,8 +5,5 @@ openpyxl
 matplotlib
 wordcloud
 gnews
-
-# Adicione a biblioteca que o Spacy usa para baixar modelos diretamente
 spacy
-# É bom garantir que o modelo também seja listado
 pt_core_news_sm

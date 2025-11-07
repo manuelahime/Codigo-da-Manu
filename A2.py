@@ -37,23 +37,41 @@ except Exception as e:
     st.stop() # Interrompe a execução se a API não estiver configurada.
 
 # === Carregamento do Modelo Spacy (Simples) ===
+import spacy.cli  # Importe a ferramenta de download
+
+# === Carregamento e Download do Modelo Spacy ===
 
 @st.cache_resource
-def load_spacy_model():
-    """Carrega o modelo Spacy uma única vez."""
+def load_spacy_model(model_name="pt_core_news_sm"):
+    """
+    Carrega o modelo Spacy. Se não estiver instalado,
+    faz o download programaticamente.
+    """
     try:
-        nlp = spacy.load("pt_core_news_sm")
-        st.sidebar.success("✅ Modelo Spacy (pt_core_news_sm) carregado.")
+        # Tenta carregar o modelo
+        nlp = spacy.load(model_name)
+        st.sidebar.success(f"✅ Modelo Spacy ({model_name}) carregado.")
         return nlp
     except IOError:
-        st.error("❌ Erro no Spacy: O modelo 'pt_core_news_sm' não foi instalado corretamente. Verifique o requirements.txt.")
-        st.stop()
+        # Se falhar (não encontrado), baixa o modelo
+        st.sidebar.warning(f"Modelo '{model_name}' não encontrado. Iniciando download...")
+        try:
+            # Usa a função de download da CLI do Spacy
+            spacy.cli.download(model_name)
+            
+            # Tenta carregar novamente após o download
+            nlp = spacy.load(model_name)
+            st.sidebar.success(f"✅ Modelo Spacy ({model_name}) baixado e carregado!")
+            return nlp
+        except Exception as e:
+            st.error(f"❌ Falha ao tentar baixar ou carregar o modelo Spacy: {e}")
+            st.stop()
     except Exception as e:
-        st.error(f"❌ Erro ao carregar modelo Spacy: {e}")
+        st.error(f"❌ Erro inesperado ao carregar modelo Spacy: {e}")
         st.stop()
 
+# Chama a função para carregar (e baixar se necessário)
 nlp = load_spacy_model()
-
 # === 2. Funções de Carregamento e Seleção (Adaptadas para Streamlit) ===
 
 @st.cache_data

@@ -37,16 +37,45 @@ except Exception as e:
     st.stop() # Interrompe a execução se a API não estiver configurada.
 
 # Carregamento do Modelo Spacy
+# === Carregamento e Instalação do Modelo Spacy ===
+
+import subprocess
+import sys # Necessário para rodar subprocessos
+
 @st.cache_resource
 def load_spacy_model():
-    """Carrega o modelo Spacy uma única vez."""
+    MODEL_NAME = "pt_core_news_sm"
     try:
-        nlp = spacy.load("pt_core_news_sm")
+        # Tenta carregar o modelo normalmente
+        nlp = spacy.load(MODEL_NAME)
+        st.sidebar.success(f"✅ Modelo Spacy ({MODEL_NAME}) carregado.")
         return nlp
     except IOError:
-        st.error("Modelo 'pt_core_news_sm' não encontrado. Por favor, rode 'python -m spacy download pt_core_news_sm' no seu terminal.")
-        st.stop()
+        # Se não encontrar, tenta fazer o download/instalação via subprocesso
+        st.warning(f"Modelo '{MODEL_NAME}' não encontrado localmente. Tentando download...")
+        
+        try:
+            # Comando para download/instalação direta do modelo via pip
+            subprocess.check_call([
+                sys.executable,
+                "-m", 
+                "pip", 
+                "install", 
+                f"https://github.com/explosion/spacy-models/releases/download/{MODEL_NAME}-3.7.0/{MODEL_NAME}-3.7.0.tar.gz"
+            ])
+            # Tenta carregar novamente após a instalação
+            nlp = spacy.load(MODEL_NAME)
+            st.sidebar.success(f"✅ Modelo Spacy ({MODEL_NAME}) baixado e carregado com sucesso!")
+            return nlp
+            
+        except subprocess.CalledProcessError as e:
+            st.error(f"❌ Erro crítico ao instalar o modelo Spacy via subprocesso: {e}")
+            st.stop()
+        except Exception as e:
+            st.error(f"❌ Erro final ao carregar o modelo Spacy: {e}")
+            st.stop()
 
+# Chama a função para garantir o carregamento
 nlp = load_spacy_model()
 
 # === 2. Funções de Carregamento e Seleção (Adaptadas para Streamlit) ===

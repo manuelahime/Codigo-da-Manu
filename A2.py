@@ -1,3 +1,7 @@
+!pip install -q --upgrade google-generativeai
+!pip install -q wordcloud gnews pandas openpyxl matplotlib
+!python -m spacy download pt_core_news_sm
+
 import streamlit as st
 import pandas as pd
 from gnews import GNews
@@ -34,7 +38,7 @@ except KeyError:
     st.sidebar.error("Erro: Chave 'GEMINI_API_KEY'não encontrada nas Secrets do Streamlit Cloud.")
 except Exception as e:
     st.sidebar.error(f"❌ Erro ao configurar a API do Gemini. Certifique-se de que a `GEMINI_API_KEY` está no seu `secrets.toml`. {e}")
-    st.stop() # Interrompe a execução se a API não estiver configurada.
+    st.stop() 
 
 # === Carregamento do Modelo Spacy (Simples) ===
 

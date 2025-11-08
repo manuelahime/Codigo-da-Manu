@@ -1,6 +1,6 @@
-!pip install -q --upgrade google-generativeai
-!pip install -q wordcloud gnews pandas openpyxl matplotlib
-!python -m spacy download pt_core_news_sm
+pip install -q --upgrade google-generativeai
+pip install -q wordcloud gnews pandas openpyxl matplotlib
+python -m spacy download pt_core_news_sm
 
 import streamlit as st
 import pandas as pd

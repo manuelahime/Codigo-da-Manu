@@ -5,9 +5,5 @@ openpyxl
 matplotlib
 wordcloud
 gnews
-
-# Fixa a versão do Spacy compatível com o Python 3.10
-spacy==3.7.0
-
-# Instala o modelo 'pt_core_news_sm' diretamente do link (compatível com spacy 3.7.0)
-https://github.com/explosion/spacy-models/releases/download/pt_core_news_sm-3.7.0/pt_core_news_sm-3.7.0-py3-none-any.whl
+spacy
+pt-core-news-sm

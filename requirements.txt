@@ -1,0 +1,5 @@
+streamlit
+gnews
+google-generativeai
+wordcloud
+spacy

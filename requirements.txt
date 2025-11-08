@@ -3,3 +3,4 @@ gnews
 google-generativeai
 wordcloud
 spacy
+pt-core-news-sm
